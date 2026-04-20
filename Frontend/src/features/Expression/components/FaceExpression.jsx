@@ -1,99 +1,46 @@
-import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { useEffect, useRef, useState } from "react";
+import { detect, init } from "../utils/utils";
 
-export default function FaceExpression() {
-  const videoRef = useRef(null);
-  const faceLandmarkerRef = useRef(null);
-  const animationRef = useRef(null);
 
-  const [emotion, setEmotion] = useState("Detecting...");
+export default function FaceExpression({ onClick = () => { } }) {
+    const videoRef = useRef(null);
+    const landmarkerRef = useRef(null);
+    const streamRef = useRef(null);
 
-  useEffect(() => {
-    let stream;
+    const [ expression, setExpression ] = useState("Detecting...");
 
-    async function init() {
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm"
-      );
+    useEffect(() => {
+        init({ landmarkerRef, videoRef, streamRef });
 
-      faceLandmarkerRef.current = await FaceLandmarker.createFromOptions(
-        vision,
-        {
-          baseOptions: {
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-assets/face_landmarker.task",
-          },
-          runningMode: "VIDEO",
-          numFaces: 1,
-          outputFaceBlendshapes: true,
-        }
-      );
+        return () => {
+            if (landmarkerRef.current) {
+                landmarkerRef.current.close();
+            }
 
-      // camera start
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
+            if (videoRef.current?.srcObject) {
+                videoRef.current.srcObject
+                    .getTracks()
+                    .forEach((track) => track.stop());
+            }
+        };
+    }, []);
 
-      detect();
+    async function handleClick() {
+        const expression = detect({ landmarkerRef, videoRef, setExpression })
+        console.log(expression)
+        onClick(expression)
     }
 
-    function detect() {
-      if (!videoRef.current || !faceLandmarkerRef.current) return;
 
-      const now = Date.now();
-
-      const results =
-        faceLandmarkerRef.current.detectForVideo(
-          videoRef.current,
-          now
-        );
-
-      if (results.faceBlendshapes.length > 0) {
-        const expressions = results.faceBlendshapes[0].categories;
-
-        // emotion logic
-        const smile = expressions.find(e => e.categoryName === "smile")?.score || 0;
-        const mouthOpen = expressions.find(e => e.categoryName === "mouthOpen")?.score || 0;
-
-        if (smile > 0.7) {
-          setEmotion("😊 Happy");
-        } else if (mouthOpen > 0.6) {
-          setEmotion("😲 Surprised");
-        } else {
-          setEmotion("😐 Neutral");
-        }
-      }
-
-      animationRef.current = requestAnimationFrame(detect);
-    }
-
-    init();
-
-    // cleanup (VERY IMPORTANT)
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
-
-  return (
-    <div style={{ textAlign: "center" }}>
-      <h2>Face Expression Detector</h2>
-
-      <video
-        ref={videoRef}
-        width={320}
-        autoPlay
-        muted
-        style={{ borderRadius: "10px" }}
-      />
-
-      <h3>{emotion}</h3>
-    </div>
-  );
+    return (
+        <div style={{ textAlign: "center" }}>
+            <video
+                ref={videoRef}
+                style={{ width: "400px", borderRadius: "12px" }}
+                playsInline
+            />
+            <h2>{expression}</h2>
+            <button onClick={handleClick} >Detect expression</button>
+        </div>
+    );
 }
