@@ -1,0 +1,74 @@
+# 🧠 4-Layer Frontend Architecture
+
+## 🟦 1. UI Layer (Presentation Layer)
+
+**Responsibility:**
+
+* UI render karna
+* User interaction handle karna
+* Navigation control karna
+
+**Includes:**
+
+* `pages/` → full screens (Login, Register, Dashboard)
+* `components/` → reusable UI parts (Navbar, Button, Card)
+
+---
+
+## 🟨 2. Hook Layer (Logic Layer)
+
+**Responsibility:**
+
+* Business logic handle karna
+* API calls trigger karna
+* State ko control karna
+
+**Includes:**
+
+* Custom hooks (e.g. `useAuth`, `usePost`)
+
+---
+
+## 🟩 3. State Layer (Global State)
+
+**Responsibility:**
+
+* Application ka shared data store karna
+* Logged-in user, auth state, posts data manage karna
+
+**Location:**
+
+* `features/auth/auth.context.jsx`
+* `features/post/post.context.jsx`
+
+---
+
+## 🟥 4. API Layer (Service Layer)
+
+**Responsibility:**
+
+* Backend se communication
+* HTTP requests handle karna (Axios / Fetch)
+
+**Location:**
+
+* `services/auth.api.js`
+* `services/post.api.js`
+
+---
+
+## 🔁 Complete Flow
+
+UI → Hook → API → Backend
+↓
+Response
+↓
+State Update
+↓
+UI Re-render
+
+---
+
+## ⚡ One-Line Summary
+
+**UI dikhata hai → Hook logic chalata hai → API backend se baat karta hai → State data store karta hai**
